@@ -8,7 +8,7 @@ while (($#)); do
     -r|--raw) raw=1     && shift ;;
     -2|--xi2) xi2=1     && shift ;;
     *)
-      printf 'Usage: %s [-l|--log] [-2|--xi2]\n' "$0"
+      printf 'Usage: %s [-l|--log] [-r|--raw] [-2|--xi2]\n' "$0"
       exit 1
       ;;
   esac
