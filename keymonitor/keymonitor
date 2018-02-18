@@ -2,11 +2,26 @@
 
 set -eu
 
-if (($#)) && [ "$1" = --no-log ]; then
-  LOGFILE=/dev/null
-else
+while (($#)); do
+  case $1 in
+    -l|--log)
+      logging=1
+      shift
+      ;;
+    *)
+      printf 'Usage: %s [-l|--log]\n' "$0"
+      exit 1
+      ;;
+  esac
+done
+
+: ${logging:=0}
+
+if (( logging )); then
   SRC=$(readlink -f "$0") # path to this script
   LOGFILE=$(dirname "$SRC")/$(basename "$SRC")-$(date +%s).log
+else
+  LOGFILE=/dev/null
 fi
 
 events() {
