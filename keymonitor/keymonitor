@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+set -eu
+
+if (($#)) && [ "$1" = --no-log ]; then
+  LOGFILE=/dev/null
+else
+  SRC=$(readlink -f "$0") # path to this script
+  LOGFILE=$(dirname "$SRC")/$(basename "$SRC")-$(date +%s).log
+fi
+
+events() {
+  xinput list | \
+    grep -oP 'id=\K\d+(?=.*slave\s*keyboard)' | \
+    xargs -P0 -n1 xinput test
+}
+
+display_keyboard_events() {
+  events | stdbuf -o0 awk '
+
+    BEGIN {
+        while (("xmodmap -pke" | getline) > 0) # read keymap table
+            keysyms[$2]=$4 # e.g.         __   _
+                           #     keycode  25 = w W w W
+                           #              ‾‾   ‾
+    }
+
+    { printf "%s [%s]\n", $0, keysyms[$NF] }
+
+  '
+}
+
+export -f events display_keyboard_events
+
+# ensure input echoing is re-enabled on exit
+trap 'stty echo' EXIT INT TERM
+
+nix-shell -p xorg.xmodmap --run "
+  stty -echo
+  display_keyboard_events | tee $LOGFILE
+"
