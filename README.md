@@ -20,7 +20,6 @@ In one variation, I use `xinput test`, and in another I use `xinput test-xi2`, w
 ## case study
 
 The following user actions generated one sequence of keyboard events in the normal case, and a different sequence in the key-repeat bug case.
-These events were observed using the `test-xi2` variation.
 
 User Actions:
 
@@ -34,6 +33,10 @@ User Actions:
 Expected chars:
 * `^W` (`0x17`)
 * ` ` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(`0x20`)
+
+### xinput test-xi2
+
+These events were observed using the `xinput test-xi2` variation.
 
 **Observed Keyboard Events [correct behavior]**
 ```
@@ -81,4 +84,45 @@ In the first case, releasing <kbd>W</kbd> caused `RawKeyRelease` and `KeyRelease
 In the second case, the `RawKeyRelease` and `KeyRelease` events for <kbd>W</kbd> were not immediately received.
 Instead, repeated `KeyPress` events were received until I pressed <kbd>space</kbd>, at which point the `RawKeyRelease` and `KeyRelease` events for <kbd>W</kbd> were received, followed by the press/release evvents for <kbd>space</kbd>
 
-Another thing to note is that the series of repeated `w` chars appears as a sequence of `KeyPress` events with not `KeyRelease` events intermixed. I think I saw pairs of presses/releases when using the other variation of this script, but I need to confirm that.
+Another thing to note is that the series of repeated `w` chars appears as a sequence of `KeyPress` events with not `KeyRelease` events intermixed.
+This differs with what I observed when using `xinput test`, which showed alternating press/release events (see next section).
+
+### xinput test-xi2
+
+These events were observed using the `xinput test` variation. Unlike the `xinput test-xi2` variation, this reported alternating key press/release events during the bug behavior.
+
+**Observed Keyboard Events [correct behavior]**
+```
+event-type   keycode  keysym
+----------   ------- ---------
+key press      66    Caps_Lock
+key press      25        w
+key release    66    Caps_Lock
+key release    25        w
+key press      65      space
+key release    65      space
+```
+
+**Observed Keyboard Events [key-repeat bug]**
+```
+event-type   keycode  keysym
+----------   ------- ---------
+key press      66    Caps_Lock
+key press      25        w
+key release    66    Caps_Lock
+key release    25        w
+key press      25        w
+key release    25        w
+key press      25        w
+key release    25        w
+key press      25        w
+key release    25        w
+key press      25        w
+key release    25        w
+key press      25        w
+key release    25        w
+key press      25        w
+key release    25        w
+key press      65      space
+key release    65      space
+```
