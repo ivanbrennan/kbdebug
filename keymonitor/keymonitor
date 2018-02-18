@@ -4,14 +4,9 @@ set -eu
 
 while (($#)); do
   case $1 in
-    -l|--log)
-      logging=1
-      shift
-      ;;
-    -2|--xi2)
-      xi2=1
-      shift
-      ;;
+    -l|--log) logging=1 && shift ;;
+    -r|--raw) raw=1     && shift ;;
+    -2|--xi2) xi2=1     && shift ;;
     *)
       printf 'Usage: %s [-l|--log] [-2|--xi2]\n' "$0"
       exit 1
@@ -20,6 +15,7 @@ while (($#)); do
 done
 
 : ${logging:=0}
+: ${raw:=0}
 : ${xi2:=0}
 
 SRC=$(readlink -f "$0") # path to this script
@@ -30,6 +26,12 @@ if (( logging )); then
   LOGFILE="$DIR/$(basename "$SRC")-$(date +%s).log"
 else
   LOGFILE=/dev/null
+fi
+
+if (( raw )); then
+  CMD=events
+else
+  CMD=display_keyboard_events
 fi
 
 if (( xi2 )); then
@@ -60,5 +62,5 @@ trap 'stty echo' EXIT INT TERM
 
 nix-shell -p xorg.xmodmap --run "
   stty -echo
-  display_keyboard_events | tee $LOGFILE
+  $CMD | tee $LOGFILE
 "
