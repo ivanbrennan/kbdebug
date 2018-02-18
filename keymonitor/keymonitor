@@ -54,7 +54,6 @@ else
   }
 fi
 
-
 export -f events display_keyboard_events
 
 # ensure input echoing is re-enabled on exit
