@@ -126,3 +126,50 @@ key release    25        w
 key press      65      space
 key release    65      space
 ```
+
+## rollover
+
+The case-study above involved rollover, since <kbd>Caps Lock</kbd> was released before <kbd>W</kbd> was.
+I also tested against a key-sequence with no rollover:
+
+User Actions:
+
+* press <kbd>Caps Lock</kbd>
+* press <kbd>W</kbd>
+* release <kbd>W</kbd>
+* release <kbd>Caps Lock</kbd>
+* press <kbd>space</kbd>
+* release <kbd>space</kbd>
+
+I've been unable to reproduce the bug when no rollover is involved, which could hint at the underlying cause.
+For completeness, the keyboard events for the non-rollover case are documented below.
+
+**Observed Keyboard Events (`xinput test-xi2`)**
+```
+event-type    keycode  keysym   modifier-mask modifier-names flags
+----------    ------- --------- ------------- -------------- -----
+RawKeyPress      66   Caps_Lock
+KeyPress         66   Caps_Lock      0             []
+RawKeyPress      25       w
+KeyPress         25       w         0x4         [Control]
+RawKeyRelease    25       w
+KeyRelease       25       w         0x4         [Control]
+RawKeyRelease    66   Caps_Lock
+KeyRelease       66   Caps_Lock     0x4         [Control]
+RawKeyPress      65     space
+KeyPress         65     space        0             []
+RawKeyRelease    65     space
+KeyRelease       65     space        0             []
+```
+
+**Observed Keyboard Events (`xinput test`)**
+```
+event-type   keycode  keysym
+----------   ------- ---------
+key press      66    Caps_Lock
+key press      25        w
+key release    66    Caps_Lock
+key release    25        w
+key press      65      space
+key release    65      space
+```
