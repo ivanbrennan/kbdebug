@@ -8,14 +8,19 @@ while (($#)); do
       logging=1
       shift
       ;;
+    -2|--xi2)
+      xi2=1
+      shift
+      ;;
     *)
-      printf 'Usage: %s [-l|--log]\n' "$0"
+      printf 'Usage: %s [-l|--log] [-2|--xi2]\n' "$0"
       exit 1
       ;;
   esac
 done
 
 : ${logging:=0}
+: ${xi2:=0}
 
 if (( logging )); then
   SRC=$(readlink -f "$0") # path to this script
@@ -24,26 +29,80 @@ else
   LOGFILE=/dev/null
 fi
 
-events() {
-  xinput list | \
-    grep -oP 'id=\K\d+(?=.*slave\s*keyboard)' | \
-    xargs -P0 -n1 xinput test
-}
+if (( xi2 )); then
+  events() {
+    xinput test-xi2 --root
+  }
 
-display_keyboard_events() {
-  events | stdbuf -o0 awk '
+  display_keyboard_events() {
+    events | perl -lne '
 
-    BEGIN {
-        while (("xmodmap -pke" | getline) > 0) # read keymap table
-            keysyms[$2]=$4 # e.g.         __   _
-                           #     keycode  25 = w W w W
-                           #              ‾‾   ‾
-    }
+      BEGIN {
+          $"=",";
+          $|++;
 
-    { printf "%s [%s]\n", $0, keysyms[$NF] }
+          open X, "-|", "xmodmap -pke";
+          while (<X>) {
+              $k{$1} = $2 if /^keycode\s+(\d+) = (\w+)/
+          }
 
-  '
-}
+          open X, "-|", "xmodmap -pm";
+          <X>;<X>;
+          while (<X>) {
+              if (/^(\w+)\s+(\w*)/) {
+                  ($k = $2) =~s/_[LR]$//;
+                  $m[$i++] = $k || $1
+              }
+          }
+          close X;
+      }
+
+      if (/^EVENT type.*\((.*)\)/) {
+          $e = $1
+      }
+      elsif (/detail: (\d+)/) {
+          $d = $1
+      }
+      elsif (/modifiers:.*effective: (.*)/) {
+          $m = $1;
+          if ($e =~ /^Key/) {
+              my @mods;
+              for (0..$#m) {
+                  if (hex($m) & (1<<$_)) {
+                      push @mods, $m[$_]
+                  }
+              }
+              printf "%-12s %3d %-11s %-3s [@mods]\n", $e, $d, "[$k{$d}]", $m
+          }
+      }
+    '
+  }
+else
+  events() {
+    xinput list | \
+      grep -oP 'id=\K\d+(?=.*slave\s*keyboard)' | \
+      xargs -P0 -n1 xinput test
+  }
+
+  display_keyboard_events() {
+    events | stdbuf -o0 awk '
+
+      BEGIN {
+          while (("xmodmap -pke" | getline) > 0) # read keymap table
+              keysyms[$2]=$4 # e.g.         __   _
+                             #     keycode  25 = w W w W
+                             #              ‾‾   ‾
+      }
+
+      {
+          event=$1" "$2
+          printf "%-13s %s [%s]\n", event, $3, keysyms[$NF]
+      }
+
+    '
+  }
+fi
+
 
 export -f events display_keyboard_events
 
