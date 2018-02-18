@@ -35,6 +35,8 @@ if (/^EVENT type.*\((.*)\)/) {
     $event = $1
 } elsif (/detail: (\d+)/) {
     $detail = $1
+} elsif (/flags:\s*(.*)/) {
+    $flags = $1
 } elsif (/modifiers:.*effective: (.*)/) {
     $mask = $1;
     if ($event =~ /^Key/) {
@@ -44,6 +46,10 @@ if (/^EVENT type.*\((.*)\)/) {
                 push @mods, $modsyms[$_]
             }
         }
-        printf "%-12s %3d %-11s %-3s [@mods]\n", $event, $detail, "[$keysyms{$detail}]", $mask
+        printf "%-13s %3d %-11s %-3s [@mods] (%s)\n", $event, $detail, "[$keysyms{$detail}]", $mask, $flags
+    }
+} elsif (/valuators:/) {
+    if ($event =~ /^RawKey/) {
+        printf "%-13s %3d %-11s\n", $event, $detail, "[$keysyms{$detail}]"
     }
 }
